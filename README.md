@@ -1,4 +1,4 @@
-# 长沙let's go！ V2 测试版
+# 长沙let's go！ V2
 
 在原有单页基础上增量增强，保留紫色 / 黄色配色、五天全部行程、五个 Tab、餐厅区域分类、预约、交通酒店、资料来源与日历导出。没有引入 PWA、离线缓存或后台推送。
 
@@ -37,11 +37,13 @@ SQLite 保存在 `.trip-data/trip.sqlite`（被 Git 忽略），持久化跨刷�
 
 ## 公开网站与后端
 
-现有公开网址 `https://loveu-changsha-lets-go.github.io/` 仍由 `main` 发布，本分支尚未替换线上版。
+公开网址 `https://loveu-changsha-lets-go.github.io/` 由 GitHub Pages 发布最新版。前端已连接云端 D1 保存服务，支持两人共享备忘、记账、任务和返程同步。
 
-GitHub Pages 只能托管 HTML / CSS / JS，不能执行 `server.mjs` 或存储共享 SQLite。因此这份测试版的共享功能已在本地服务验证，但**尚未接入可公开访问的云端服务**。不能通过上传文件到 Pages 就宣称完成云端同步。
+云端 API：`https://changsha-for-two-october.chy2026us.chatgpt.site/api/`。`cloud-worker.mjs` 实现身份与权限校验，`db/schema.ts` 和 `drizzle/` 维护数据库迁移。`build-cloud.mjs` 生成兼容云端的 Worker；云端发布沿用原攻略 Sites 项目。Github 页面使用云端 API，电脑本地运行仍使用同源 Node / SQLite 服务。
 
-完整上线需要 Node 24 的 HTTPS 托管服务、持久磁盘，并配置 `.trip-data` 为持久目录（或通过 `TRIP_DATA_DIR` 设置）。服务端通过 `PORT` / `HOST` 适配托管环境。当前前端调用同源 `/api/`，部署时需把静态页面和接口放在同一 HTTPS 域名；若保留 GitHub Pages 前端，则需另做 API 地址、CORS 与部署配置。请勿将数据库、访问凭证或 `.env` 上传到公开仓库。
+页面本身无需 GitHub 或 ChatGPT 登录。若访问者的网络无法直连 `chatgpt.site`，仍可查看攻略，但共享写入会提示失败并保留草稿，不能承诺该网络下的共享可用。不要把两人专属链接发到公共群，也不要把数据库、访问凭证或 `.env` 上传到公开仓库。
+
+本地发布工作流使用 Node 24；云端使用 D1，迁移必须先生成并检查，已应用的迁移不要修改。云端生产版本应使用 `.openai/hosting.json` 的原项目身份，声明 `d1: "DB"`，运行构建并通过 Sites 发布，不通过 GitHub Pages 执行后端。
 
 ## 功能与维护
 
@@ -61,4 +63,4 @@ npm test
 
 验证覆盖：两人读取相同备忘、跨作者 / 跨旅行写入拒绝、服务重启后保存、预算金额精度、数据文件不可下载、五个 Tab 与原内容、整行勾选、筛选、打卡、搜索、主题、返程与日历联动、留言自动保存、HTML 转义。
 
-当前环境的本地端口没有用户浏览器转发，未完成真实手机 / 平板截图和 A4 打印视觉验收；上线前应在实际设备复核这两项。
+云端验收覆盖真实跨域请求、双人读取、作者删除权限与记账金额。浏览器交互和页面资源也会在发布后检查；真实手机 / 平板和 A4 打印仍建议在实际设备复核。

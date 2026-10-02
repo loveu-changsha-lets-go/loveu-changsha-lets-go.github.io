@@ -47,7 +47,7 @@ test('two travelers, ownership, persistence, original tabs and return linkage', 
 
     const errors = [], console = new VirtualConsole(); console.on('jsdomError', e => errors.push(e.message));
     const dom = new JSDOM(await (await fetch(base)).text(), { url: base, resources: 'usable', runScripts: 'dangerously', pretendToBeVisual: true, virtualConsole: console,
-      beforeParse(w) { w.fetch = (url, init) => fetch(new URL(url, base), init); w.structuredClone = structuredClone; w.TextEncoder = TextEncoder; w.scrollTo = () => {}; w.HTMLElement.prototype.scrollIntoView = () => {}; w.HTMLDialogElement.prototype.showModal = function() { this.open = true; }; w.HTMLDialogElement.prototype.close = function() { this.open = false; }; w.localStorage.setItem('changsha-ui-v2',JSON.stringify({session:pair.token})); }
+      beforeParse(w) { w.fetch = (url, init) => fetch(new URL(url, base), init); w.structuredClone = structuredClone; w.TextEncoder = TextEncoder; w.AbortSignal = AbortSignal; w.scrollTo = () => {}; w.HTMLElement.prototype.scrollIntoView = () => {}; w.HTMLDialogElement.prototype.showModal = function() { this.open = true; }; w.HTMLDialogElement.prototype.close = function() { this.open = false; }; w.localStorage.setItem('changsha-ui-v2',JSON.stringify({session:pair.token})); }
     });
     windows.push(dom.window);
     await new Promise(resolve => dom.window.addEventListener('load', resolve));

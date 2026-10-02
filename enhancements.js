@@ -7,6 +7,7 @@
   const ui = { filter: 'all', session: prefs.session || '', connected: false, available: false,
     notes: [], expenses: [], changes: [], partnerToken: '', draftId: crypto.randomUUID(), saving: false };
   const categories = ['餐饮', '交通', '门票', '住宿', '购物', '其他'];
+  const apiOrigin = location.hostname === 'loveu-changsha-lets-go.github.io' ? 'https://changsha-for-two-october.chy2026us.chatgpt.site' : '';
   const pending = new Map();
   const originalRender = render;
   const originalDayCalendar = dayCalendar;
@@ -23,7 +24,7 @@
   const cleanText = html => { const t = document.createElement('template'); t.innerHTML = html; return t.content.textContent.replace(/\s+/g, ' ').trim(); };
   function urgent(date, time) { const delta = stamp(date, time) - Date.now(); return delta >= 0 && delta <= 86400000; }
   async function request(endpoint, method = 'GET', value) {
-    const res = await fetch(`/api/${endpoint}`, { method, headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${ui.session}` }, body: value === undefined ? undefined : JSON.stringify(value) });
+    const res = await fetch(`${apiOrigin}/api/${endpoint}`, { method, headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${ui.session}` }, body: value === undefined ? undefined : JSON.stringify(value), ...(typeof AbortSignal.timeout === 'function' ? {signal: AbortSignal.timeout(12000)} : {}) });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error(data.error || '共享服务暂时不可用');
     return data;

@@ -1,0 +1,4 @@
+.trip-data/
+node_modules/
+.env
+*.sqlite*

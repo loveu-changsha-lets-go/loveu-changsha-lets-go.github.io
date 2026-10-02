@@ -21,7 +21,7 @@ test('two travelers, ownership, persistence, original tabs and return linkage', 
     const response = await fetch(`${base}/api/${endpoint}`, { method, headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) }, body: value === undefined ? undefined : JSON.stringify(value) });
     return { status: response.status, data: await response.json() };
   }
-  const until = async predicate => { for(let i=0;i<100;i++){ if(await predicate()) return; await new Promise(r=>setTimeout(r,30)); } throw new Error('State did not update'); };
+  const until = async (predicate, attempts=100) => { for(let i=0;i<attempts;i++){ if(await predicate()) return; await new Promise(r=>setTimeout(r,30)); } throw new Error('State did not update'); };
   try {
     await start();
     assert.equal((await call('health')).status,200);
@@ -87,6 +87,35 @@ test('two travelers, ownership, persistence, original tabs and return linkage', 
     assert.equal(d.getElementById('memoList').querySelector('script'),null);
     const draft = d.getElementById('memoDraft'); draft.value = '双方刷新可见的第二条留言'; draft.dispatchEvent(new dom.window.Event('input',{bubbles:true}));
     await until(async () => (await call('state',pair.partnerToken)).data.notes.some(n => n.text === draft.value));
+    await until(() => d.getElementById('memoList').textContent.includes(draft.value));
+    assert.ok(d.querySelector('.memo-card.editing time[datetime]'));
+    // Deleting the current editor message must retire its retry draft.
+    const deleteButton = d.querySelector('.memo-card.editing [data-delete-note]'); deleteButton.click();
+    await until(async () => !(await call('state',pair.partnerToken)).data.notes.some(n => n.text === '双方刷新可见的第二条留言'));
+    await until(() => !deleteButton.disabled);
+    assert.equal(draft.value,'');
+    assert.equal(JSON.parse(dom.window.localStorage.getItem('changsha-ui-v2')).draft,'');
+    // A failed autosave cannot discard text when "another note" is pressed.
+    const liveFetch = dom.window.fetch;
+    dom.window.fetch = (url,init) => String(url).includes('/api/notes/') ? Promise.resolve(new Response(JSON.stringify({error:'测试保存失败'}),{status:503})) : liveFetch(url,init);
+    draft.value = '网络失败仍然保留这段文字'; d.getElementById('newMemo').click();
+    await until(() => d.getElementById('draftStatus').textContent.includes('测试保存失败'));
+    assert.equal(draft.value,'网络失败仍然保留这段文字');
+    dom.window.fetch = liveFetch; d.getElementById('newMemo').click();
+    await until(() => draft.value === '');
+    assert.ok((await call('state',pair.partnerToken)).data.notes.some(n => n.text === '网络失败仍然保留这段文字'));
+    d.getElementById('budgetLimit').value = '0'; d.getElementById('budgetLimit').dispatchEvent(new dom.window.Event('change',{bubbles:true}));
+    assert.match(d.getElementById('budgetSummary').textContent,/预算剩余¥-0.10/);
+    dom.window.dispatchEvent(new dom.window.Event('beforeprint'));
+    assert.equal(d.querySelectorAll('#printTrip .print-day').length,5);
+    assert.equal(d.querySelectorAll('#printTrip button,#printTrip input').length,0);
+    dom.window.eval("changeView('guide')"); assert.equal(d.getElementById('budgetLimit').value,'0');
+    dom.window.eval("changeView('itinerary'); state.day=4; render()");
+    const remoteReturn = (await call('state',pair.token)).data.settings.return;
+    remoteReturn.wu.time = '09:24';
+    assert.equal((await call('settings',pair.partnerToken,'PUT',{key:'return',value:remoteReturn,label:'旅伴调整返程'})).status,200);
+    await until(() => d.querySelectorAll('.event')[2].querySelector('p').textContent.includes('09:24'),300);
+    assert.match(d.querySelector('.critical p').textContent,/09:24/);
     assert.deepEqual(errors,[]);
     assert.equal((await call(`notes/${id}`,pair.token,'DELETE')).status,200);
   } finally { windows.forEach(w=>w.close()); if (server?.exitCode === null) await stop(); await rm(dir,{recursive:true,force:true}); }

@@ -1,0 +1,27 @@
+import {test} from 'node:test';
+import assert from 'node:assert/strict';
+import {DatabaseSync} from 'node:sqlite';
+import {readFile,readdir} from 'node:fs/promises';
+import {handleAPI} from './cloud-worker.mjs';
+test('cloud D1 contract: CORS, traveler isolation, autosave, settings and ownership',async()=>{
+  const sqlite=new DatabaseSync(':memory:');
+  for(const file of (await readdir('drizzle')).filter(f=>f.endsWith('.sql')))sqlite.exec(await readFile('drizzle/'+file,'utf8'));
+  const env={DB:{prepare(sql){const stmt=sqlite.prepare(sql);const make=args=>({bind(...values){return make(values)},async first(){return stmt.get(...args)||null},async all(){return {results:stmt.all(...args)}},async run(){return stmt.run(...args)}});return make([])},async batch(list){sqlite.exec('BEGIN');try{const out=[];for(const q of list)out.push(await q.run());sqlite.exec('COMMIT');return out}catch(e){sqlite.exec('ROLLBACK');throw e}}}};
+  const call=async(path,token,method='GET',value,origin='https://loveu-changsha-lets-go.github.io')=>{const res=await handleAPI(new Request('https://changsha-for-two-october.chy2026us.chatgpt.site/api/'+path,{method,headers:{Origin:origin,Authorization:'Bearer '+(token||''),'Content-Type':'application/json'},body:value===undefined?undefined:JSON.stringify(value)}),env);return {status:res.status,headers:res.headers,data:res.status===204?null:await res.json()}};
+  assert.equal((await call('health')).data.storage,'cloud');
+  assert.equal((await call('state','','OPTIONS')).headers.get('Access-Control-Allow-Origin'),'https://loveu-changsha-lets-go.github.io');
+  assert.equal((await call('health','','GET',undefined,'https://unrelated.example')).status,403);
+  assert.equal((await call('state')).status,401);
+  const pair=(await call('rooms','','POST',{author:'cai'})).data;
+  const id=crypto.randomUUID();
+  assert.equal((await call('notes/'+id,pair.token,'PUT',{text:'云端测试备忘'})).status,200);
+  assert.equal((await call('state',pair.partnerToken)).data.notes[0].text,'云端测试备忘');
+  assert.equal((await call('notes/'+id,pair.partnerToken,'DELETE')).status,403);
+  assert.equal((await call('notes/'+id,pair.partnerToken,'PUT',{text:'不能改他人'})).status,403);
+  assert.equal((await call('settings',pair.token,'PUT',{key:'event-0-0',value:true})).status,200);
+  assert.equal((await call('state',pair.partnerToken)).data.settings['event-0-0'],true);
+  assert.equal((await call('expenses/'+crypto.randomUUID(),pair.token,'PUT',{amount:12.35,payer:'both',category:'餐饮',date:'2026-10-03'})).status,200);
+  assert.equal((await call('state',pair.partnerToken)).data.expenses[0].cents,1235);
+  assert.equal((await call('notes/'+id,pair.token,'DELETE')).status,200);
+  sqlite.close();
+});

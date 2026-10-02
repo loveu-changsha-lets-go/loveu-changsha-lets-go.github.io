@@ -5,7 +5,7 @@
   let prefs = {};
   try { prefs = JSON.parse(localStorage.getItem('changsha-ui-v2') || '{}'); } catch {}
   const ui = { filter: 'all', session: prefs.session || '', connected: false, available: false,
-    notes: [], expenses: [], changes: [], partnerToken: '', draftId: crypto.randomUUID(), saving: false };
+    notes: [], expenses: [], changes: [], partnerToken: '', draftId: crypto.randomUUID(), saving: false, deleting: '' };
   const categories = ['餐饮', '交通', '门票', '住宿', '购物', '其他'];
   const apiOrigin = location.hostname === 'loveu-changsha-lets-go.github.io' ? 'https://changsha-for-two-october.chy2026us.chatgpt.site' : '';
   const pending = new Map();
@@ -30,12 +30,18 @@
     return data;
   }
   async function flush() {
-    if (!ui.connected) return;
-    for (const [key, value] of [...pending]) {
-      try { await request('settings', 'PUT', value); if (pending.get(key) === value) pending.delete(key); }
-      catch { syncLabel('有修改待保存，正在重试'); return; }
-    }
-    syncLabel('共享已连接 · 自动保存');
+    if (!ui.connected || ui.flushing) return;
+    ui.flushing = true;
+    try {
+      // Serialize updates so rapid taps cannot overwrite a newer shared value.
+      while (pending.size && ui.connected) {
+        const [key,value] = pending.entries().next().value;
+        await request('settings','PUT',value);
+        if (pending.get(key) === value) pending.delete(key);
+      }
+      syncLabel('共享已连接 · 自动保存');
+    } catch { syncLabel('有修改待保存，正在重试'); }
+    finally { ui.flushing = false; }
   }
   function update(key, value, label) {
     local[key] = value; save();
@@ -50,10 +56,15 @@
       ui.connected = true; ui.author = data.author;
       ui.notes = data.notes; ui.expenses = data.expenses; ui.changes = data.changes;
       ui.partnerToken = data.partnerToken || '';
+      const sharedChanges = Object.entries(data.settings).some(([key,value]) => !pending.has(key) && JSON.stringify(local[key]) !== JSON.stringify(value));
       Object.assign(local, data.settings, Object.fromEntries([...pending].map(([k, v]) => [k, v.value])));
       save(); applyReturns(); header();
       if (state.view === 'guide') fillShared();
-      if (!document.querySelector('input:focus,select:focus,textarea:focus')) enhance();
+      // Refresh remote edits without replacing an input while a traveler is typing.
+      ui.needsRender ||= sharedChanges;
+      if (!document.querySelector('input:focus,select:focus,textarea:focus')) {
+        if (ui.needsRender) { ui.needsRender = false; render(); } else enhance();
+      }
       syncLabel(pending.size ? '有修改待保存，正在重试' : '共享已连接 · 自动保存');
     } catch { ui.connected = false; syncLabel('暂时无法同步，输入仍保留'); }
   }
@@ -70,7 +81,7 @@
       event.time = trip.time; event.end = person === 'cai' ? '23:59' : trip.end;
       event.title = `${names[person]}：${trip.code} → ${trip.to}`; event.place = trip.station;
       event.body = `10.07 ${trip.time} ${trip.station}出发，${person === 'cai' ? '10.08 ' : '10.07 '}${trip.end}抵达${trip.to}。时刻与席位请核对最终订单。`;
-      event.transit = `建议 ${shifted(trip.time, -60)} 前到站，按当日交通和检票安排提前动身。`;
+      event.transit = `目标 ${arriveTime(person, trip.time)} 前到站；如当天拥堵，可按导航进一步提前动身。`;
       const travel = days[4].events[person === 'wu' ? 1 : 5];
       travel.time = leaveTime(person, trip.time); travel.end = arriveTime(person, trip.time);
       travel.place = trip.station; travel.title = `${names[person]}取行李，去${trip.station}`;
@@ -79,7 +90,7 @@
       if (person === 'wu') { days[4].events[0].time = shifted(trip.time, -144); days[4].events[0].end = shifted(trip.time, -104); }
     }
     days[4].route = `吴：酒店 → ${r.wu.station}；蔡：酒店 → ${r.cai.station} → ${r.cai.to}`;
-    days[4].planB = `提前准备两种正规交通方式，吴目标${shifted(r.wu.time, -60)}前到${r.wu.station}，蔡目标${shifted(r.cai.time, -60)}前到${r.cai.station}。运行异常及时联系12306。`;
+    days[4].planB = `提前准备两种正规交通方式，吴目标${arriveTime('wu',r.wu.time)}前到${r.wu.station}，蔡目标${arriveTime('cai',r.cai.time)}前到${r.cai.station}。运行异常及时联系12306。`;
     for (let i = 0; i < essential.length; i++) {
       const old = originalEssential[i]; Object.assign(essential[i], old);
       if (old.date === '2026-10-07' && old.title.includes('G1778')) Object.assign(essential[i], { time: r.wu.time, end: r.wu.end, place: r.wu.station, title: `吴：${r.wu.code} ${r.wu.station} → ${r.wu.to}` });
@@ -99,30 +110,41 @@
   }
   function enhance() {
     const view = document.getElementById('view');
+    document.querySelectorAll('[data-view]').forEach(el => el.setAttribute('aria-current', el.dataset.view === state.view ? 'page' : 'false'));
     if (state.view === 'itinerary') {
-      if (!view.querySelector('.date-scroll-hint')) view.querySelector('.days').insertAdjacentHTML('afterend', '<div class="date-scroll-hint">左右滑动查看五天日程</div><div class="task-filters" aria-label="筛选旅伴">' + ['all', 'wu', 'cai', 'both'].map(k => `<button class="filter ${ui.filter === k ? 'active' : ''}" data-traveler-filter="${k}">${k === 'all' ? '全部旅伴' : names[k]}</button>`).join('') + '</div>');
+      if (!view.querySelector('.date-scroll-hint')) {
+        const dates = view.querySelector('.days');
+        dates.insertAdjacentHTML('afterend', '<div class="date-scroll-hint">左右滑动查看五天日程</div><div class="task-filters" aria-label="筛选旅伴">' + ['all', 'wu', 'cai', 'both'].map(k => `<button class="filter ${ui.filter === k ? 'active' : ''}" data-traveler-filter="${k}" aria-pressed="${ui.filter === k}">${k === 'all' ? '全部旅伴' : names[k]}</button>`).join('') + '</div>');
+        // Keep the swipe cue accurate after rotation, resizing and horizontal scrolling.
+        dates.addEventListener('scroll', dateScrollHint, {passive:true});
+        dateScrollHint();
+        requestAnimationFrame(() => { const selected = dates.querySelector('.active'); dates.scrollLeft = Math.max(0, selected.offsetLeft - dates.offsetLeft - (dates.clientWidth - selected.clientWidth)/2); dateScrollHint(); });
+      }
       view.querySelectorAll('.event').forEach((el, i) => {
         const key = `event-${state.day}-${i}`, item = days[state.day].events[i];
         const person = local[`tag-${key}`] || eventPerson(state.day, i);
         const status = local[key] ? 'done' : (local[`progress-${key}`] || (Date.now() >= stamp(days[state.day].date, item.time) && Date.now() < stamp(days[state.day].date, item.end) ? 'active' : 'pending'));
         el.dataset.taskKey = key; el.dataset.taskIndex = i; el.dataset.person = person;
         el.classList.toggle('done', status === 'done'); el.classList.toggle('in-progress', status === 'active');
+        el.classList.toggle('urgent', !local[key] && /赶车|已支付|返程|航班|车次/.test(item.kind + item.title) && urgent(days[state.day].date,item.time));
+        el.tabIndex = 0; el.setAttribute('aria-label', `${item.time}至${item.end}，${item.title}，${status === 'done' ? '已完成' : status === 'active' ? '进行中' : '待完成'}，按空格切换完成`);
         el.hidden = ui.filter !== 'all' && ui.filter !== person;
         el.querySelector('.event-time').textContent = `${item.time}–${item.end}`;
         if (!el.querySelector('[data-task-person]')) el.querySelector('.event-top').insertAdjacentHTML('afterbegin', `<select class="tag-select" data-task-person="${key}" aria-label="任务旅伴">${['wu', 'cai', 'both'].map(k => `<option value="${k}" ${person === k ? 'selected' : ''}>${names[k]}</option>`).join('')}</select><button class="task-status" data-progress="${key}"></button>`);
         el.querySelector('[data-progress]').textContent = { done: '已完成', active: '进行中', pending: '待完成' }[status];
+        el.querySelector('[data-progress]').setAttribute('aria-label', `任务状态：${{done:'已完成',active:'进行中',pending:'待完成'}[status]}，点击切换`);
         el.querySelector('[data-done]').checked = !!local[key];
       });
       if (!view.querySelector('.filter-empty')) view.querySelector('.timeline').insertAdjacentHTML('beforeend', '<p class="filter-empty meta">这一天没有该旅伴的任务。</p>');
       view.querySelector('.filter-empty').hidden = !!view.querySelector('.event:not([hidden])');
-      view.querySelectorAll('[data-traveler-filter]').forEach(x => x.classList.toggle('active', x.dataset.travelerFilter === ui.filter));
+      view.querySelectorAll('[data-traveler-filter]').forEach(x => { x.classList.toggle('active', x.dataset.travelerFilter === ui.filter); x.setAttribute('aria-pressed',x.dataset.travelerFilter === ui.filter); });
     }
     if (state.view === 'food') {
       const visible = food.filter(f => state.area === '全部' || f.area === state.area);
       view.querySelectorAll('.food-card').forEach((el, i) => {
         const f = visible[i], id = food.indexOf(f);
         if (!el.querySelector('[data-food]')) el.insertAdjacentHTML('beforeend', `<div class="food-status"><button data-food="${id}" data-value="wish">♡ 想吃</button><button data-food="${id}" data-value="visited">✓ 已打卡</button></div><a class="address-link" href="${map(f.map)}" target="_blank" rel="noopener">${esc(f.map)}</a>`);
-        el.querySelectorAll('[data-food]').forEach(x => x.classList.toggle('selected', local[`food-${id}`] === x.dataset.value));
+        el.querySelectorAll('[data-food]').forEach(x => { x.classList.toggle('selected', local[`food-${id}`] === x.dataset.value); x.setAttribute('aria-pressed',local[`food-${id}`] === x.dataset.value); });
       });
     }
     if (state.view === 'booking') {
@@ -130,6 +152,7 @@
       view.querySelectorAll('.reserve-card').forEach((el, i) => {
         const r = reservations[i], deadline = deadlines[r.id];
         el.classList.toggle('urgent', !local[`book-${r.id}`] && urgent(...deadline));
+        el.querySelector('[data-book-note]').parentElement.firstChild.textContent = ui.connected ? '记下已预约时段或确认信息（与旅伴共享）' : '记下已预约时段或确认信息（仅此设备）';
         if (!el.querySelector('.deadline-note')) el.insertAdjacentHTML('beforeend', `<p class="deadline-note meta">准备事项截止：${deadline[0].slice(5)} ${deadline[1]}（计划检查时间，非官方放号时间）</p>`);
       });
     }
@@ -152,14 +175,21 @@
       fillShared();
     }
     view.querySelectorAll('img').forEach(img => { img.loading = 'lazy'; img.addEventListener('error', () => { const p = document.createElement('div'); p.className = 'image-placeholder'; p.textContent = '图片暂未加载，可稍后查看原图'; img.replaceWith(p); }, { once: true }); });
-    view.querySelectorAll('.date-scroll-hint').forEach(x => { const dates = view.querySelector('.days'); x.hidden = dates.scrollWidth <= dates.clientWidth; });
+    dateScrollHint();
+  }
+  function dateScrollHint() {
+    const dates = document.querySelector('.days'), hint = document.querySelector('.date-scroll-hint'); if (!dates || !hint) return;
+    const overflow = dates.scrollWidth - dates.clientWidth;
+    hint.hidden = overflow <= 2;
+    hint.textContent = dates.scrollLeft <= 2 ? '向左滑动，查看后面的日期' : dates.scrollLeft >= overflow-2 ? '已到 DAY5 · 向右滑动返回' : '左右滑动，查看五天日程';
+    dates.classList.toggle('more-dates',dates.scrollLeft < overflow-2);
   }
   function sharedHTML() {
     return `<section id="sharedPanel" class="collaboration"><div class="section-bar"><h2>两个人的备忘</h2><span class="meta" data-sync-label>${ui.connected ? '共享已连接 · 自动保存' : '尚未连接共享旅行'}</span></div>
       <div id="connectPanel"><p>创建后，把旅伴专属链接发给对方。备忘和记账保存在同一份旅行中。</p><label>我是<select id="createAuthor"><option value="wu">吴</option><option value="cai">蔡</option></select></label><button class="primary" id="createShared">创建共享旅行</button><p id="sharedError" class="meta" role="status"></p></div>
       <div id="sharedConnected" hidden><div class="actions"><span id="identity" class="pill"></span><button id="sharePartner">复制旅伴链接</button><button id="disconnectShared">断开此设备</button></div><label class="memo-label">记下想说的话<textarea id="memoDraft" maxlength="2000" rows="3" placeholder="比如：明天想试试那家虾饺……"></textarea></label><div class="draft-actions"><span id="draftStatus" role="status">停下输入后自动保存</span><button class="small" id="newMemo">另写一条</button></div><div id="memoList"></div></div>
       <article class="guide-card packing-card"><h3>行李清单</h3><div class="packing-grid">${['身份证 / 学生证', '充电宝 / 充电线', '水 / 纸巾', '薄外套', '折叠伞', '舒适鞋', '常用药', '列车晚饭 / 早餐'].map((x, i) => `<label><input type="checkbox" data-pack="${i}"> ${x}</label>`).join('')}</div><p class="meta">${ui.connected ? '与旅伴共享勾选' : '未连接时，勾选仅保存在此设备'}</p></article>
-      <article class="guide-card budget-card"><h3>旅行小账本</h3><label>总预算（元）<input id="budgetLimit" type="number" min="0" max="1000000" step="0.01" value="${Number(local.budget) || 2680}"></label><div id="budgetSummary"></div><form id="expenseForm"><label>金额<input name="amount" type="number" min="0.01" max="1000000" step="0.01" required inputmode="decimal"></label><label>分类<select name="category">${categories.map(c => `<option>${c}</option>`).join('')}</select></label><label>付款人<select name="payer"><option value="wu">吴</option><option value="cai">蔡</option><option value="both">双人均付</option></select></label><label>日期<input name="date" type="date" value="2026-10-03" required></label><label class="full">备注<input name="text" maxlength="200" placeholder="例如：午饭"></label><button class="primary" type="submit">记一笔</button><span class="meta" id="expenseStatus" role="status"></span></form><div id="expenseList"></div></article>
+      <article class="guide-card budget-card"><h3>旅行小账本</h3><label>总预算（元）<input id="budgetLimit" type="number" min="0" max="1000000" step="0.01" value="${Number(local.budget ?? 2680)}"></label><div id="budgetSummary"></div><form id="expenseForm"><label>金额<input name="amount" type="number" min="0.01" max="1000000" step="0.01" required inputmode="decimal"></label><label>分类<select name="category">${categories.map(c => `<option>${c}</option>`).join('')}</select></label><label>付款人<select name="payer"><option value="wu">吴</option><option value="cai">蔡</option><option value="both">双人均付</option></select></label><label>日期<input name="date" type="date" value="2026-10-03" required></label><label class="full">备注<input name="text" maxlength="200" placeholder="例如：午饭"></label><button class="primary" type="submit">记一笔</button><span class="meta" id="expenseStatus" role="status"></span></form><div id="expenseList"></div></article>
       <details class="changes"><summary>最近的修改记录</summary><div id="changeList"></div></details></section>`;
   }
   function fillShared() {
@@ -171,9 +201,10 @@
     document.querySelectorAll('[data-pack]').forEach(el => { el.checked = !!local[`pack-${el.dataset.pack}`]; });
     const draft = document.getElementById('memoDraft');
     if (!draft.value && prefs.draft) draft.value = prefs.draft;
-    document.getElementById('memoList').innerHTML = ui.notes.filter(n => n.id !== ui.draftId).map(n => `<article class="memo-card"><div class="memo-meta">${names[n.author]} · ${formatDate(n.updated)}</div><p>${esc(n.text)}</p>${n.author === ui.author ? `<div class="actions"><button data-edit-note="${n.id}">编辑</button><button data-delete-note="${n.id}">删除我的留言</button></div>` : ''}</article>`).join('') || '<p class="meta">还没有其他留言，写下第一条吧。</p>';
+    document.getElementById('memoList').innerHTML = ui.notes.map(n => `<article class="memo-card ${n.id === ui.draftId ? 'editing' : ''}"><div class="memo-meta"><strong>${names[n.author]}</strong><time datetime="${esc(n.updated)}">${formatDate(n.updated)}</time>${n.id === ui.draftId ? '<span>正在编辑</span>' : ''}</div><p>${esc(n.text)}</p>${n.author === ui.author ? `<div class="actions"><button data-edit-note="${n.id}">编辑</button><button data-delete-note="${n.id}">删除我的留言</button></div>` : ''}</article>`).join('') || '<p class="memo-empty">还没有留言，写下第一条吧。</p>';
     const total = ui.expenses.reduce((s, e) => s + e.cents, 0), wu = ui.expenses.reduce((s, e) => s + (e.payer === 'wu' ? e.cents : e.payer === 'both' ? e.cents / 2 : 0), 0), cai = total - wu;
-    document.getElementById('budgetSummary').innerHTML = `<div class="stat-row"><div class="stat">已消费<strong>${money(total)}</strong></div><div class="stat">预算剩余<strong>${money((Number(local.budget) || 2680) * 100 - total)}</strong></div></div><p class="meta">吴支付 ${money(wu)} · 蔡支付 ${money(cai)} · 每人均摊 ${money(total / 2)}</p><div class="category-totals">${categories.map(c => `<span>${c} ${money(ui.expenses.filter(e => e.category === c).reduce((s, e) => s + e.cents, 0))}</span>`).join('')}</div>`;
+    const limit = Number(local.budget ?? 2680);
+    document.getElementById('budgetSummary').innerHTML = `<div class="stat-row"><div class="stat">已消费<strong>${money(total)}</strong></div><div class="stat">预算剩余<strong>${money(limit * 100 - total)}</strong></div></div><p class="meta">吴支付 ${money(wu)} · 蔡支付 ${money(cai)} · 每人均摊 ${money(total / 2)}</p><div class="category-totals">${categories.map(c => `<span>${c} ${money(ui.expenses.filter(e => e.category === c).reduce((s, e) => s + e.cents, 0))}</span>`).join('')}</div>`;
     document.getElementById('expenseList').innerHTML = ui.expenses.map(e => `<div class="expense-row"><div><strong>${money(e.cents)}</strong> · ${e.category}<p class="meta">${e.date} · ${names[e.payer]}付款${e.text ? ` · ${esc(e.text)}` : ''}</p></div>${e.author === ui.author ? `<button class="small" data-delete-expense="${e.id}">删除</button>` : ''}</div>`).join('');
     document.getElementById('expenseForm').querySelector('button').disabled = !ui.connected;
     document.getElementById('expenseStatus').textContent = ui.connected ? '' : '连接共享旅行后即可记账';
@@ -181,18 +212,19 @@
   }
   async function saveDraft() {
     const draft = document.getElementById('memoDraft'), value = draft?.value ?? prefs.draft ?? '';
-    if (!value.trim()) return;
+    if (!value.trim()) return true;
     const status = text => { const el = document.getElementById('draftStatus'); if (el) el.textContent = text; };
     prefs.draft = value; prefs.draftId = ui.draftId; setPrefs();
-    if (!ui.connected || ui.saving) return;
+    if (!ui.connected || ui.saving || ui.deleting) return false;
     const id = ui.draftId; ui.saving = true;
-    if (ui.notes.some(n => n.id === id && n.text === value.trim())) { ui.saving = false; return; }
+    if (ui.notes.some(n => n.id === id && n.text === value.trim())) { ui.saving = false; status('已自动保存'); return true; }
     status('保存中…');
     try {
       await request(`notes/${id}`, 'PUT', { text: value });
       status('已自动保存');
       await refresh();
-    } catch (e) { status(`${e.message}，输入已保留`); }
+      return true;
+    } catch (e) { status(`${e.message}，输入已保留`); return false; }
     finally { ui.saving = false; if ((document.getElementById('memoDraft')?.value ?? prefs.draft) !== value) saveDraft(); }
   }
   function exportText() {
@@ -237,7 +269,18 @@
     else if (button.dataset.food !== undefined) { const key = `food-${button.dataset.food}`; update(key, local[key] === button.dataset.value ? '' : button.dataset.value, '更新美食打卡'); enhance(); }
     else if (button.dataset.searchView) { state.area = '全部'; ui.filter = 'all'; if (button.dataset.searchDay !== undefined) state.day = Number(button.dataset.searchDay); changeView(button.dataset.searchView); document.getElementById('searchResults').hidden = true; const target = document.querySelector(`[data-task-index="${button.dataset.searchIndex}"]`); if (target) { target.scrollIntoView({ behavior: 'smooth', block: 'center' }); target.classList.add('search-hit'); } }
     else if (button.hasAttribute('data-edit-return')) editReturnDialog();
-    else if (button.dataset.deleteNote || button.dataset.deleteExpense) { const kind = button.dataset.deleteNote ? 'notes' : 'expenses', id = button.dataset.deleteNote || button.dataset.deleteExpense; try { await request(`${kind}/${id}`, 'DELETE'); await refresh(); } catch (err) { toast(err.message); } }
+    else if (button.dataset.deleteNote || button.dataset.deleteExpense) {
+      const kind = button.dataset.deleteNote ? 'notes' : 'expenses', id = button.dataset.deleteNote || button.dataset.deleteExpense;
+      if (ui.saving || ui.deleting) { toast('正在保存，请稍后再试'); return; }
+      ui.deleting = id; clearTimeout(draftTimer); button.disabled = true;
+      try {
+        await request(`${kind}/${id}`, 'DELETE');
+        // Retire a deleted draft so the retry timer cannot recreate that message.
+        if (kind === 'notes' && id === ui.draftId) { ui.draftId = crypto.randomUUID(); prefs.draftId = ui.draftId; prefs.draft = ''; setPrefs(); document.getElementById('memoDraft').value = ''; document.getElementById('draftStatus').textContent = '停下输入后自动保存'; }
+        await refresh();
+      } catch (err) { toast(err.message); }
+      finally { ui.deleting = ''; button.disabled = false; }
+    }
     else if (button.dataset.editNote) { const note = ui.notes.find(n => n.id === button.dataset.editNote); ui.draftId = note.id; prefs.draftId = note.id; prefs.draft = note.text; setPrefs(); document.getElementById('memoDraft').value = note.text; document.getElementById('memoDraft').focus(); fillShared(); }
     else if (button.id === 'themeToggle') { prefs.theme = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark'; document.documentElement.dataset.theme = prefs.theme; setPrefs(); }
     else if (button.id === 'hideNotice') { prefs.hideNotice = true; setPrefs(); header(); }
@@ -254,7 +297,7 @@
     }
     else if (button.id === 'disconnectShared') { ui.session = ''; ui.connected = false; ui.notes = []; ui.expenses = []; ui.partnerToken = ''; prefs.session = ''; pending.clear(); setPrefs(); render(); }
     else if (button.id === 'sharePartner') { const link = `${location.origin}${location.pathname}#join=${ui.partnerToken}`; try { await navigator.clipboard.writeText(link); toast('旅伴专属链接已复制，请仅发给旅伴'); } catch { const input = document.createElement('input'); input.value = link; button.after(input); input.select(); toast('请复制框内的旅伴链接'); } }
-    else if (button.id === 'newMemo') { await saveDraft(); if (ui.saving || !ui.connected) { toast('请等备忘保存成功后再另写一条'); return; } ui.draftId = crypto.randomUUID(); prefs.draft = ''; prefs.draftId = ui.draftId; setPrefs(); document.getElementById('memoDraft').value = ''; document.getElementById('draftStatus').textContent = '停下输入后自动保存'; fillShared(); }
+    else if (button.id === 'newMemo') { if (!await saveDraft()) { toast('请等备忘保存成功后再另写一条'); return; } ui.draftId = crypto.randomUUID(); prefs.draft = ''; prefs.draftId = ui.draftId; setPrefs(); document.getElementById('memoDraft').value = ''; document.getElementById('draftStatus').textContent = '停下输入后自动保存'; fillShared(); }
   });
   document.addEventListener('change', e => {
     const el = e.target;
@@ -282,12 +325,21 @@
     }
   });
   window.addEventListener('scroll', () => { document.getElementById('backTop').hidden = window.scrollY < 400; }, { passive: true });
+  window.addEventListener('resize',dateScrollHint,{passive:true});
+  document.addEventListener('keydown',e => { if (e.target.matches('.event') && (e.key === ' ' || e.key === 'Enter')) { e.preventDefault(); e.target.querySelector('[data-done]').click(); } });
   window.addEventListener('beforeprint', preparePrint);
   if (prefs.draftId) ui.draftId = prefs.draftId;
   const invitation = new URLSearchParams(location.hash.slice(1)).get('join');
-  if (invitation) { ui.session = invitation; prefs.session = invitation; setPrefs(); history.replaceState(null, '', location.pathname + location.search); changeView('guide'); }
+  if (invitation) {
+    if (invitation !== ui.session) {
+      // A new invitation must not bring a previous room's notes or settings along.
+      for (const key of Object.keys(local)) if (/^(event-|book-|note-|tag-|progress-|food-|pack-|return$|budget$)/.test(key)) delete local[key];
+      save(); prefs.draft = ''; ui.draftId = crypto.randomUUID(); prefs.draftId = ui.draftId;
+    }
+    ui.session = invitation; prefs.session = invitation; setPrefs(); history.replaceState(null, '', location.pathname + location.search); changeView('guide');
+  }
   request('health').then(() => { ui.available = true; }).catch(() => {});
   refresh();
-  setInterval(async () => { if (ui.session) { if (!ui.connected) ui.connected = true; await flush(); await refresh(); if(ui.connected && prefs.draft) await saveDraft(); } }, 5000);
+  setInterval(async () => { if (ui.session) { await refresh(); await flush(); if(ui.connected && prefs.draft) await saveDraft(); } }, 5000);
   setInterval(() => { if (!document.querySelector('input:focus,textarea:focus,select:focus')) enhance(); }, 60000);
 })();

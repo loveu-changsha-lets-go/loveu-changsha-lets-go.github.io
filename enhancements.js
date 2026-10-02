@@ -1,4 +1,63 @@
 /* V2 augments the original five renderers. Existing route content is preserved. */
+// Source links and research date travel with the content. Visitor prompts are editorial.
+const cityStories = [
+  {id:'yuelu',group:'山水与人文',title:'岳麓书院 · 一座仍在生长的学校',day:'DAY3',overview:'从北宋书院到今天的湖南大学，岳麓书院的故事是知识如何在一座城市延续。看院落，也看讲堂与匾额：它们记录了不同时代怎样理解学习、讨论与求真。',sections:[
+    ['先认清它的时间线','书院创于北宋开宝九年（976），由潭州太守朱洞创建；1015年获宋真宗赐额。1903年改制为湖南高等学堂，1926年定名湖南大学。今天书院仍是湖南大学的教学科研机构。延续的是教育传统，不能据此把所有现存建筑都当作千年前原物。'],
+    ['讲堂里为什么值得停一停','1167年，朱熹与张栻在这里会讲。不同思想通过讨论相互回应，这是书院史中很有分量的一页。“实事求是”匾关联民国时期校长宾步程倡导的治学精神；“学达性天”等匾额也各有历史与重刻背景。匾上的字、今天看到的匾、它最早出现的年代，要分开理解。'],
+    ['现场怎么看','建议先看讲堂空间，再读一块匾：它希望学习者成为什么样的人？把院落想成讨论与授课的场所，留意门庭如何把人带向讲堂。你们可以各选一句最认同或最想追问的话，离开前交换理由。这是游览提问，不是要求读懂全部理学。']],sources:[['湖南大学岳麓书院 · 书院概况','https://ylsy.hnu.edu.cn/sygk.htm'],['湖南大学 · 讲堂匾额与碑文','https://peixun.hnu.edu.cn/info/1019/4650.htm']]},
+  {id:'aiwan',group:'山水与人文',title:'爱晚亭 · 一首诗如何成为一处风景',day:'DAY3',overview:'爱晚亭把岳麓山的林木、书院文化与近现代记忆放在同一处。名字来自杜牧《山行》的诗意；亭子建于清代，比诗人生活的年代晚得多。',sections:[
+    ['从红叶亭到爱晚亭','湖南省文旅厅介绍，书院山长罗典在1792年建亭，初名红叶亭；1794年毕沅建议以杜牧《山行》诗意改名爱晚亭。网络流传的改名人物存在不同说法，这里采用文旅部门所载版本。名字借用了唐诗，并不意味着杜牧曾在这座亭中作诗。'],
+    ['今天看到的亭子有几层历史','亭子经历过损坏、修缮与重建。1952年重修时，湖南大学校长李达邀请毛泽东题写匾额。理解它，可以同时看清代山林游赏、大学与书院的关系，以及近现代题字留下的记忆，避免把所有构件归为同一个年代。'],
+    ['把目光从牌匾移向山林','先远看亭与坡地、树冠的关系，再近看檐角与匾额。10月初的叶色以当日实景为准，不预设已经满山红叶。两人各拍一张不同方向的风景，之后比较：一个人记住了建筑，另一个人是否记住了树影或声音？']],sources:[['湖南省文旅厅 · 爱晚亭历史及修缮','https://whhlyt.hunan.gov.cn/whhlyt/news/mtjj/202107/t20210706_19853514.html']]},
+  {id:'orange',group:'山水与人文',title:'橘子洲 · 江中洲与青年时代',day:'DAY4',overview:'橘子洲首先是一处湘江中的沙洲，也是长沙的山、水、城相互对望的地方。文学与青年记忆让这段江面有了更多含义：风景不只在雕塑旁，也在看向两岸的视线里。',sections:[
+    ['先把山、水、城放回地图','橘子洲位于湘江之中，西望岳麓山，东向长沙城区。洲与江岸不同：水把它与两边隔开，却也把城市的两岸联系起来。游览时可以用三个方向辨认环境——山在哪边，城在哪边，水正向哪里流。这样看，比只寻找一个拍照背景更容易建立城市方位感。'],
+    ['诗词中的长沙','毛泽东在长沙求学、活动的青年经历与橘子洲相联，1925年《沁园春·长沙》也把湘江、洲与青年人的志向写在一起。诗歌是一位作者在特定时代的观看与表达。今天的雕塑与公共景观是后来的纪念表达，不能把它们当作1925年现场原貌。'],
+    ['一起多停留三分钟','选一处安全、不挡路的位置，先不拍照，各说出三样看到或听到的东西。你们看到的是船、树、天际线，还是岸边人群？把两个答案并排记下，城市的同一处风景会留下两种记忆。交通与步行距离仍按原行程安排，故事阅读不增加必须打卡的任务。']],sources:[['湖南省政府 · 橘子洲风景与历史','https://hunan.gov.cn/hnszf/c101474/202108/t20210827_20403826.html']]},
+  {id:'dufu',group:'山水与人文',title:'杜甫江阁 · 江边的晚年诗人记忆',day:'DAY2',overview:'江阁让人想到杜甫晚年在长沙的经历，但今天的建筑是2005年建成的仿唐纪念建筑。知道这层区别后，可以把建筑、诗人经历与眼前的湘江分开看，再让它们彼此连接。',sections:[
+    ['它纪念什么，又建于何时','运营方介绍，杜甫晚年在湖南生活，并三次寓居长沙；江阁以这一段经历为纪念主题。现建筑建成于2005年。它用仿唐形式表达纪念，并非杜甫住过的唐代原楼，也不能因为名称有“江阁”就把古代居所与今天的建筑画等号。'],
+    ['从晚年漂泊读到城市相逢','杜甫《江南逢李龟年》把旧日相识与江南重逢联系起来。理解这首诗，可以留意其中时间流逝、人生变化与重逢的感受，而不只读作一幅漂亮春景。江边游览不必复述完整年谱；知道诗人晚年漂泊的背景，就多了一条感受风景的线索。'],
+    ['你们可以怎样看江阁','先退后看楼与江岸的关系，再沿安全步道看对岸和远山。日落、灯光与当天天气有关，不把历史材料中的演出或活动当作本次必有项目。给这晚留一句话：如果以后再来，你最想记得身边的人说过什么？']],sources:[['长沙城发集团 · 杜甫江阁介绍','https://www.csudgroup.com/portal/article/index/navId/62/id/1730/cid/45.html']]},
+  {id:'kaifu',group:'山水与人文',title:'古开福寺 · 繁华城市里的另一种节奏',day:'DAY4',overview:'开福寺的历史可以追溯到五代，寺院在多次修建中延续至今。它提供了一种不同于商圈的城市体验：建筑、树木与日常宗教生活，让脚步和声音都慢下来。',sections:[
+    ['一座寺院如何跨越朝代','近期关于寺院建筑与园林的研究介绍记载，开福寺始建于927年。长久历史中经历了多次修建与恢复。它的价值既来自久远的宗教传统，也来自不同时期留下的空间层次；今天所见不能整体认定为五代原建。'],
+    ['留意建筑与院落之间','寺院适合按空间节奏观看：门、院落、殿堂之间如何连接，树木怎样形成停留处，人们如何使用这些空间。宗教建筑不只是外观与年代，也承载着仍在发生的礼佛生活。有关签文的内容属于民间与宗教习俗，不作为对未来的事实判断。'],
+    ['两人的安静片刻','跟随现场指引，尊重礼佛者与拍摄规定。你们可以各选择一处不妨碍通行的位置，停留片刻后再交流最先注意到的细节。院落、树影、钟声与匾额都可以成为记录主题。研究介绍的新景观不等于所有区域在当日均对外开放。']],sources:[['新湖南 · 湖南建投研究团队介绍开福寺园林与建筑（2026）','https://www.hunantoday.cn/news/xhn/202609/33697000.html']]},
+  {id:'wuyi',group:'街巷与艺术',title:'五一广场 · 热闹商圈下面的古代生活',day:'DAY3',overview:'五一广场不只有商店和人潮。2010年发现的东汉简牍，让长沙古代城市生活以文字重新出现：日常事务、治理与人的往来，也是一座城市的历史。',sections:[
+    ['地下发现了什么','2010年，五一广场东侧偏南的一处井窖出土6862枚东汉简牍。相关整理研究涉及地方行政、司法、经济、军事等内容。它们与常听到的走马楼三国吴简是不同批次、不同年代的发现，阅读介绍时不要混在一起。'],
+    ['为何普通文字也值得记住','简牍是纸张尚未普遍替代竹木书写材料时的信息载体。一座城市的历史可以从帝王将相讲起，也可以从一份文书、一次交接和一件民事事务讲起。把古代记录与眼前密集的城市信息作对照，是理解历史的一个角度；这属于游览解读，不表示每个现代街区都原样延续。'],
+    ['在商圈给历史留一点空间','到广场时先看人流与街道交汇，想一想：如果只留下今天的某一条记录，后人会怎样理解这座城市？本条是地点背景，不意味着原发现井窖现在可参观，也不临时增加博物馆预约。你们的简短回答可以成为当天回忆。']],sources:[['清华大学出土文献研究与保护中心 · 长沙五一广场东汉简牍','https://www.ctwx.tsinghua.edu.cn/info/1011/3076.htm']]},
+  {id:'huangxing',group:'街巷与艺术',title:'黄兴路与老城街巷 · 地名会说话',day:'DAY3',overview:'黄兴路的名字纪念辛亥革命重要人物黄兴，街道又长期承载商业生活。沿黄兴路走向解放西一带，可以同时观察纪念性地名、城市商业与今天的夜间生活。',sections:[
+    ['从街名进入历史','地方地名研究介绍，这条道路曾使用南正路等名称，后来为纪念黄兴更名。地名让一个人的历史进入日常：人们买东西、约见面时，也不断使用这段公共记忆。不同资料对更名年份有不同表述，本条不以某一争议年份作为游览重点。'],
+    ['商业街既有延续，也有变化','历史地名资料记载了这一区域的道路建设、老商号与商业发展。今天的店铺、招牌和建筑会变化，不能把整条步行街描述成未经改造的古街。看老城，可以同时辨认旧地名和现代消费空间；新旧并置本身也是城市经历。解放西的夜生活则提供另一种当代观察。'],
+    ['做一个街名小收藏','路过时拍下你真正走过的一块路牌，再选一个让你想问“为什么叫这个名字”的地名。两人可以分别选街边细节：一个看招牌，一个看行人的使用方式。无需为了收集而绕路，原路线里的一两处就足够组成这晚的城市印象。']],sources:[['新湖南 · 历史地名学者陈先枢《长沙市历史地名故事》摘录','https://www.hunantoday.cn/news/xhn/202401/19304430.html']]},
+  {id:'xpm',group:'街巷与艺术',title:'谢子龙影像艺术馆 · 从拍照到理解影像',day:'DAY2',overview:'白色建筑是入口，影像才是继续观看的理由。馆方长期关注中国早期影像：一张照片既呈现某个瞬间，也带着拍摄者的选择、时代的技术与观看方式。',sections:[
+    ['艺术馆关注什么','艺术馆于2017年9月16日开馆。馆方介绍其收藏与展览关注早期中国影像历史，材料包括不同时期和媒介的摄影作品。官网的2022年“影像时刻”资料可帮助理解馆藏方向，但那是历史展览，不能据此承诺你们在2026年仍能看到同一批展品。'],
+    ['建筑如何让观看慢下来','设计者的介绍讨论了清水混凝土、光线与空间关系。现场可以观察窗洞、阴影、墙面与水面如何组织视线。建筑摄影不只寻找固定机位：站在不同方向，光与轮廓的变化会改变画面。材料与空间的感受，最好由眼前真实条件决定。'],
+    ['试着问一张照片三个问题','如果遇到人物影像，先问：谁在拍，谁被拍，谁没有进入画面？再看衣着、姿态与背景告诉了你什么，有哪些是你猜测的。两人各选一张作品，交换选择理由。具体展览、开放区域和拍摄规定以当天馆方公告为准。']],sources:[['谢子龙影像艺术馆 · 早期影像收藏与历史展览','https://www.x-museum.com/web-wechat/info/detail?infoId=457'],['新湖南 · 设计者讲述影像艺术馆建筑','https://www.hunantoday.cn/news/xhn/201712/14553734.html']]},
+  {id:'zijian',group:'街巷与艺术',title:'李自健美术馆 · 把普通人的面孔看仔细',day:'DAY2',overview:'李自健的写实绘画常从乡土、家庭与普通人的生活展开。与影像馆连着看，可以比较两种记忆方式：照片截取一个瞬间，绘画则通过构图、色彩和笔触重新组织经验。',sections:[
+    ['馆与人的联系','美术馆于2016年建成开放，位于洋湖一带。李自健在家乡建设公共艺术空间，让绘画进入城市游览的日常。关于创馆的报道适合了解背景；它不是当天开放时间、票务或现展的保证，相关安排仍以馆方发布为准。'],
+    ['绘画里的乡土与情感','中国国家博物馆保存的2013年李自健作品展资料，以人性与爱概括其创作，介绍了乡土、母女、家书等主题。这里引用的是艺术家创作背景，不把历史展览清单当作当前馆内陈列。遇到作品时可以先读人物的表情与动作，再看色彩和环境怎样支持情绪。'],
+    ['两人各选一张，先不看说明','如果当天展览允许，先看作品一分钟，各说一个观察，再读说明，区分画面上能看到的东西与自己的联想。最后问对方：它让你想起了谁，或者哪一种日常？你们的答案没有标准版本，值得保留的正是不同感受。']],sources:[['红网 / 湖南日报 · 李自健美术馆建成开放报道','https://hn.rednet.cn/c/2016/09/22/1010636.htm'],['中国国家博物馆 · 2013年李自健作品展档案','https://www.chnmuseum.cn/zl/zlhg/201812/t20181220_32318.shtml']]},
+  {id:'rice',group:'餐桌故事',title:'长沙米粉 · 一碗早餐与凌晨的劳动',day:'早餐 / 南门口',overview:'米粉把长沙的日常生活放进一只碗里。汤、粉和“码子”各有角色；一碗看似简单的早餐，背后连着磨米、蒸制、配送和店家天亮前的准备。',sections:[
+    ['粉与码子要分开认识','长沙米粉中常见扁粉，也有圆粉选择。“码子”是配在粉上的菜肴：炒码强调现炒，煨码则以提前炖煨的食材入碗。点单时，可以分别问粉的形态、码子的做法以及是否另加辣椒；店铺之间会有差异，不把一套点法当作全城统一规则。'],
+    ['一碗早餐如何来到街头','湖南日报2020年的行业访谈记录了湘乡月山人参与长沙米粉生产的经历，也介绍浸泡、磨浆、蒸制、切粉与配送环节。米粉的城市记忆既来自食客，也来自清晨之前工作的制粉者。这是访谈记录的一条行业线索，不是长沙米粉唯一的起源，也不等于当下每家店的供应方式。'],
+    ['吃的时候做一个小比较','先尝一口未额外加辣的汤，再看看粉的宽窄与码子的搭配。两人选不同码子，可以互尝一小口，记录自己更喜欢汤味、粉的口感还是配菜。早饭的体验无需追求名店排行，行程附近、当天实际营业的一碗同样能成为记忆。']],sources:[['华声在线 · 长沙米粉与炒码、煨码','https://hunan.voc.com.cn/news/202004/24701997.html'],['湖南日报 · 长沙米粉行业人物访谈','https://hunan.voc.com.cn/news/202005/24680487.html']]},
+  {id:'stinky',group:'餐桌故事',title:'臭豆腐 · 闻到的与吃到的为何不同',day:'南门口 / 小吃',overview:'长沙臭豆腐的辨识度来自发酵卤水、炸制与汤汁共同形成的风味。非遗档案记录的是火宫殿这一支具体制作技艺的传承，并不代表所有摊位都具有同一非遗身份。',sections:[
+    ['把非遗说准确','国家级非遗名录中的项目是2021年入选的“火宫殿臭豆腐制作技艺”。项目档案记载一支制作传承及其发展，不能由此认定所有长沙臭豆腐品牌都获得同一认定，也不把某一传承故事当作全国臭豆腐的唯一发明经过。你们的餐厅备选保持原样，本条不替任何门店作身份背书。'],
+    ['风味是多个工序叠加的结果','项目资料将制作归纳为卤水、豆腐坯、浸泡、炸制与汤汁等环节。闻到的气味与入口后的味觉、口感并不是同一件事；外壳、内部和调味一起形成体验。不同摊位的材料与做法可能不同，不能凭外观判断具体配方或制作卫生状况。'],
+    ['两人尝一小份就够','结合你们的微辣偏好，可以先问辣椒、辣油能否分开，点一小份共同尝试。各用三个自己的词描述味道，再看有没有相同答案。喜欢或不喜欢都可以写进回忆，无需把“必须爱吃”当作认识长沙的门槛。']],sources:[['中国非物质文化遗产网 · 火宫殿臭豆腐制作技艺','https://www.ihchina.cn/project_details/23593/']]},
+  {id:'sugar',group:'餐桌故事',title:'糖油粑粑 · 糯米、糖与街头的热锅',day:'南门口 / 小吃',overview:'糖油粑粑的主角很朴素：糯米粉、糖和锅里的火候。它代表了街头甜食的一种日常手艺，适合与咸鲜小吃对照着尝，而不需要借神奇起源故事来证明价值。',sections:[
+    ['简单原料，细看做法','湖南省政府的饮食介绍写到，糯米粉制成粑粑，在油锅与糖汁中翻滚制作，相关做法会使用红片糖、桂花糖等。原料少不等于没有手艺，成形、加热与裹糖都会影响成品。不同店家的版本与甜度可能不同，资料中的配方不作为所有摊位的统一标准。'],
+    ['关于起源，哪些可以不急着相信','地方饮食文章常附带传说，但传说不等于可核验的发明年代与人物。相关政府介绍也把来历故事标为参考。本条保留材料与制作线索，不把治病等民间叙事当作事实。认识地方小吃，也可以从普通人的早餐、加餐和街头购买习惯进入。'],
+    ['把一口甜留在记录里','你们可分一小份，稍放凉再尝，分别记录更在意糯米口感还是糖香。照片可以拍锅、盛装方式或手里的小份，按摊位允许的方式拍摄。回忆里写下当时在哪里站着、身边有什么声音，比只记一个“好吃”更具体。']],sources:[['湖南省政府 · 糖油粑粑介绍','https://www.hunan.gov.cn/hnszf/jxxx/hxwh/cwd/201711/t20171111_4685383.html']]},
+  {id:'xiang',group:'餐桌故事',title:'湘菜与辣椒 · 今天的熟悉，也有传播历史',day:'湘菜 / 微辣点单',overview:'湘菜不只有辣。辣椒在湖南的普及经历了历史过程，地方饮食在食材、技术与生活中不断变化。理解这一点，就可以自在地尝湘味，同时选择适合两人的辣度。',sections:[
+    ['辣椒不是自古不变的标记','关于辣椒传播的研究通过地方志等材料，讨论其在明清时期进入并逐渐传播的过程，其中可见湖南地区的记录。地方菜系是在变化中形成的，不能用今天的常见口味倒推所有古代湖南人都这样吃，也不能把辣度当作个人身份的考试。'],
+    ['别用单一原因解释一种口味','贸易、迁移、食材取得与烹调选择，可以成为理解食物传播的线索。复杂的地方饮食不宜只用“天气潮湿所以吃辣”概括，更不能把辣椒写成疾病预防或治疗方法。你们可以同时留意鲜、香、咸与烹调方式，辣椒只是体验中的一个维度。'],
+    ['对应你们的餐厅备选','费大厨、炊烟等保留在原有美食列表，本条介绍菜系背景，不保证门店能把每道菜改成完全不辣。点单仍按原提醒，明确少辣、辣油分开，并询问可做不辣的蒸蛋、汤或蔬菜。一起尝味道，比为了“地道”勉强吃辣更适合这次旅行。']],sources:[['华南农业大学 · 俞为洁《论辣椒在中国的选择性传播》','https://yjs.scau.edu.cn/2019/0512/c3176a185425/page.htm']]},
+  {id:'guest',group:'餐桌故事',title:'客居风味 · 在长沙吃粤点与淮扬菜',day:'DAY1 / 清淡备选',overview:'茶港的粤式点心、南里晓舍的淮扬菜定位，是你们行程里的清淡备选。它们来自不同地域的饮食传统；在长沙相遇，本身也呈现现代城市餐桌的多样性。',sections:[
+    ['粤点：吃饭也可以是一段相处时间','广州文旅资料介绍广府“一盅两件”的饮茶生活：茶与点心相伴，也让熟人有时间聊天。茶楼文化经历了从市井茶寮到丰富餐饮空间的发展。你们在茶港吃虾饺与肠粉，可以借这个背景理解粤点的分享方式，但不把特定长沙门店认定为某条历史传承的直接继承者。'],
+    ['淮扬菜：从清鲜与手艺进入','江苏有关淮扬菜专家的介绍强调清鲜平和及刀工、火候。这样的风格背景能帮助理解行程为何安排淮扬菜作备选，但具体菜单、辣度与当天做法必须问店家，不能仅凭菜系名称作保证。这里讨论的是地域风味，不把粤点或淮扬菜说成长沙本地发明。'],
+    ['给两个人的口味留空间','这顿饭可留下一个轻松问题：今天最想再点一次的是哪道菜，为什么？答案可以不同。宜家餐厅也继续保留为补给备选，不为它补写长沙传统故事。旅行中的餐桌既可以认识城市，也可以照顾疲惫、偏好与两人的相处节奏。']],sources:[['广州市文旅局 · 广府茶楼与饮茶文化','https://wglj.gz.gov.cn/ztmb/gzhyn/whgz/content/post_8832957.html'],['江苏人大 · 周晓燕谈淮扬菜','https://www.jsrd.gov.cn/hyzl/srdh/d_12469/dbtd/202602/t20260203_1307093.shtml']]}
+];
 (() => {
   'use strict';
   const names = { wu: '吴', cai: '蔡', both: '双人' };
@@ -238,6 +297,8 @@
     const box = document.getElementById('searchResults'); q = q.trim().toLowerCase();
     if (!q) { box.hidden = true; return; }
     const results = [];
+    // Cultural entries have their own search targets, including expanded text.
+    if (typeof cityStories !== 'undefined') cityStories.forEach(s => results.push({ view: 'guide', story: s.id, title: s.title, text: [s.overview, ...s.sections.flat()].join(' ') }));
     days.forEach((d, day) => d.events.forEach((e, index) => results.push({ view: 'itinerary', day, index, title: `DAY${day + 1} ${e.time} · ${e.title}`, text: Object.values(e).join(' ') })));
     food.forEach(f => results.push({ view: 'food', title: `${f.name} · ${f.branch}`, text: Object.values(f).join(' ') }));
     reservations.forEach(r => results.push({ view: 'booking', title: r.name, text: Object.values(r).join(' ') }));
@@ -246,7 +307,7 @@
     ui.notes.forEach(n => results.push({ view: 'guide', title: `${names[n.author]}的备忘`, text: n.text }));
     ui.expenses.forEach(e => results.push({ view: 'guide', title: `${e.category} · ${money(e.cents)}`, text: `${e.category} ${e.text} ${e.date}` }));
     const hits = results.filter(r => `${r.title} ${r.text}`.toLowerCase().includes(q)).slice(0, 25);
-    box.hidden = false; box.innerHTML = hits.map(r => `<button data-search-view="${r.view}" ${r.day !== undefined ? `data-search-day="${r.day}" data-search-index="${r.index}"` : ''}><strong>${esc(r.title)}</strong><span>${esc(r.text.slice(0, 100))}</span></button>`).join('') || '<p>没有匹配内容，试试景点、菜名或车次。</p>';
+    box.hidden = false; box.innerHTML = hits.map(r => `<button data-search-view="${r.view}" ${r.story ? `data-search-story="${r.story}"` : ''} ${r.day !== undefined ? `data-search-day="${r.day}" data-search-index="${r.index}"` : ''}><strong>${esc(r.title)}</strong><span>${esc(r.text.slice(0, 100))}</span></button>`).join('') || '<p>没有匹配内容，试试景点、菜名或车次。</p>';
   }
   function editReturnDialog() {
     const r = returns(); document.getElementById('returnFields').innerHTML = ['wu', 'cai'].map(person => `<fieldset><legend>${names[person]} · 10.07返程${person === 'cai' ? ' / 次日到达' : ''}</legend>${[['time', '出发时间', 'time'], ['end', '到达时间', 'time'], ['station', '出发车站', 'text'], ['code', '车次', 'text'], ['to', '到达车站', 'text']].map(([key, label, type]) => `<label>${label}<input name="${person}-${key}" type="${type}" maxlength="60" required value="${esc(r[person][key])}"></label>`).join('')}</fieldset>`).join(''); document.getElementById('returnDialog').showModal();
@@ -267,7 +328,7 @@
     if (button.dataset.travelerFilter) { ui.filter = button.dataset.travelerFilter; enhance(); }
     else if (button.dataset.progress) { const key = button.dataset.progress; update(key, false, '调整任务状态'); update(`progress-${key}`, local[`progress-${key}`] === 'active' ? 'pending' : 'active', '调整任务状态'); enhance(); }
     else if (button.dataset.food !== undefined) { const key = `food-${button.dataset.food}`; update(key, local[key] === button.dataset.value ? '' : button.dataset.value, '更新美食打卡'); enhance(); }
-    else if (button.dataset.searchView) { state.area = '全部'; ui.filter = 'all'; if (button.dataset.searchDay !== undefined) state.day = Number(button.dataset.searchDay); changeView(button.dataset.searchView); document.getElementById('searchResults').hidden = true; const target = document.querySelector(`[data-task-index="${button.dataset.searchIndex}"]`); if (target) { target.scrollIntoView({ behavior: 'smooth', block: 'center' }); target.classList.add('search-hit'); } }
+    else if (button.dataset.searchView) { state.area = '全部'; ui.filter = 'all'; if (button.dataset.searchDay !== undefined) state.day = Number(button.dataset.searchDay); changeView(button.dataset.searchView); document.getElementById('searchResults').hidden = true; if (button.dataset.searchStory) openCityStory(button.dataset.searchStory); const target = document.querySelector(`[data-task-index="${button.dataset.searchIndex}"]`); if (target) { target.scrollIntoView({ behavior: 'smooth', block: 'center' }); target.classList.add('search-hit'); } }
     else if (button.hasAttribute('data-edit-return')) editReturnDialog();
     else if (button.dataset.deleteNote || button.dataset.deleteExpense) {
       const kind = button.dataset.deleteNote ? 'notes' : 'expenses', id = button.dataset.deleteNote || button.dataset.deleteExpense;
@@ -342,4 +403,51 @@
   refresh();
   setInterval(async () => { if (ui.session) { await refresh(); await flush(); if(ui.connected && prefs.draft) await saveDraft(); } }, 5000);
   setInterval(() => { if (!document.querySelector('input:focus,textarea:focus,select:focus')) enhance(); }, 60000);
+})();
+
+// Cultural reading stays within the existing five tabs; it never changes a task's status.
+function openCityStory(id) {
+  const story = cityStories.find(s => s.id === id);
+  if (!story) return;
+  const dialog = document.getElementById('cityStoryDialog');
+  dialog.innerHTML = `<div class="dialog-head"><div><span class="eyebrow">${esc(story.group)} · ${esc(story.day)}</span><h2 id="cityStoryTitle">${esc(story.title)}</h2></div><button class="close" data-close-story aria-label="关闭城市故事">×</button></div><p class="story-lead">${esc(story.overview)}</p>${story.sections.map(([heading,text]) => `<section class="story-chapter"><h3>${esc(heading)}</h3><p>${esc(text)}</p></section>`).join('')}<aside class="story-sources"><h3>资料与延伸阅读</h3><ul>${story.sources.map(([label,url]) => `<li><a href="${esc(url)}" target="_blank" rel="noopener noreferrer">${esc(label)} ↗</a></li>`).join('')}</ul><p class="meta">整理核对：2026.10.02。历史资料用于背景阅读；“现场怎么看”等互动建议为本行程策划。</p></aside>`;
+  if (!dialog.open) dialog.showModal();
+  dialog.scrollTop = 0;
+}
+(() => {
+  const original = render;
+  const guide = renderGuide;
+  const storyCard = s => `<article class="city-story-card"><span class="eyebrow">${esc(s.day)}</span><h3>${esc(s.title)}</h3><p>${esc(s.overview)}</p><button class="small" data-city-story="${s.id}">展开背景与游览提示 →</button></article>`;
+  const inlineStory = ids => `<details class="story-inline"><summary>这里的故事 · 先读30秒</summary>${ids.map(id => {const s = cityStories.find(x => x.id === id);return `<h4>${esc(s.title)}</h4><p>${esc(s.overview)}</p><button class="small" data-city-story="${id}">继续了解 →</button>`;}).join('')}</details>`;
+  const places = [['岳麓书院','yuelu'],['爱晚亭','aiwan'],['橘子洲','orange'],['杜甫江阁','dufu'],['开福寺','kaifu'],['谢子龙','xpm'],['李自健','zijian'],['五一广场','wuyi'],['黄兴路','huangxing']];
+  const foodStories = [['guest'],['guest'],[],['xiang'],['xiang'],['guest'],['stinky'],['rice','sugar']];
+  renderGuide = function() {
+    return `${guide()}<section id="cityLibrary" class="city-library" aria-labelledby="cityLibraryTitle"><div class="city-intro"><span class="eyebrow">CITY STORIES · 先总览，再走近</span><h2 id="cityLibraryTitle">读懂长沙，再留自己的故事</h2><p>先用三条线认识这座城：岳麓山与书院连接山林和求学；湘江与橘子洲、江阁连接地理、诗词与青年记忆；街巷、艺术馆和一碗米粉，把历史带回普通人的日常。下面围绕你们已经安排的路线展开，读完概览，再挑感兴趣的背景继续看。</p><p class="meta">山水与人文 → 街巷与艺术 → 餐桌故事。每篇附可追溯资料，现场观察与双人提问单独成段。</p></div>${['山水与人文','街巷与艺术','餐桌故事'].map(group => `<section class="city-group"><h3>${group}</h3><div class="city-story-grid">${cityStories.filter(s => s.group === group).map(storyCard).join('')}</div></section>`).join('')}</section>`;
+  };
+  document.body.insertAdjacentHTML('beforeend','<dialog id="cityStoryDialog" class="city-story-dialog" aria-labelledby="cityStoryTitle"></dialog>');
+  document.querySelector('.export-tools').insertAdjacentHTML('beforeend','<button class="small" id="showCityStories">读懂长沙</button>');
+  function decorate() {
+    if (state.view === 'itinerary') document.querySelectorAll('.event').forEach((el,i) => {
+      if (el.querySelector('.story-inline')) return;
+      const event = days[state.day].events[i];
+      const ids = [...new Set(places.filter(([word]) => event.title.includes(word)).map(([,id]) => id))];
+      if (ids.length) el.querySelector('.actions').insertAdjacentHTML('beforebegin',inlineStory(ids));
+    });
+    if (state.view === 'food') {
+      const visible = food.filter(f => state.area === '全部' || f.area === state.area);
+      document.querySelectorAll('.food-card').forEach((el,i) => {
+        const ids = foodStories[food.indexOf(visible[i])];
+        if (ids?.length && !el.querySelector('.story-inline')) el.querySelector('.actions').insertAdjacentHTML('beforebegin',inlineStory(ids));
+      });
+    }
+  }
+  render = function() { original(); decorate(); };
+  document.addEventListener('click',e => {
+    const button = e.target.closest('button');
+    if (!button) return;
+    if (button.dataset.cityStory) openCityStory(button.dataset.cityStory);
+    if (button.hasAttribute('data-close-story')) document.getElementById('cityStoryDialog').close();
+    if (button.id === 'showCityStories') { changeView('guide'); document.getElementById('cityLibrary').scrollIntoView({behavior:'smooth',block:'start'}); }
+  });
+  render();
 })();

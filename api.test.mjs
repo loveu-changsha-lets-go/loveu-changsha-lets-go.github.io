@@ -83,6 +83,25 @@ test('two travelers, ownership, persistence, original tabs and return linkage', 
     assert.ok(d.querySelectorAll('[data-search-view="food"]').length > 0);
     dom.window.eval("changeView('guide')");
     assert.equal(d.querySelectorAll('.guide-card').length,6);
+    // New reading stays searchable, preserves five tabs and never checks a task.
+    assert.equal(d.querySelectorAll('.city-story-card').length,14);
+    search.value = '朱张'; search.dispatchEvent(new dom.window.Event('input',{bubbles:true}));
+    // Search actual expanded history rather than only card titles.
+    search.value = '1167'; search.dispatchEvent(new dom.window.Event('input',{bubbles:true}));
+    d.querySelector('[data-search-story="yuelu"]').click();
+    assert.equal(d.getElementById('cityStoryDialog').open,true);
+    assert.match(d.getElementById('cityStoryDialog').textContent,/朱熹与张栻/);
+    assert.ok(d.querySelector('.story-sources a[href="https://ylsy.hnu.edu.cn/sygk.htm"]'));
+    d.querySelector('[data-close-story]').click();
+    assert.equal(d.getElementById('cityStoryDialog').open,false);
+    dom.window.eval("state.day=1; changeView('itinerary')");
+    const reading = d.querySelector('.story-inline');
+    const before = reading.closest('.event').querySelector('[data-done]').checked;
+    reading.querySelector('summary').click();
+    reading.querySelector('[data-city-story]').click();
+    assert.equal(reading.closest('.event').querySelector('[data-done]').checked,before);
+    d.querySelector('[data-close-story]').click();
+    dom.window.eval("changeView('guide')");
     assert.match(d.getElementById('memoList').textContent,/微辣虾饺/);
     assert.equal(d.getElementById('memoList').querySelector('script'),null);
     const draft = d.getElementById('memoDraft'); draft.value = '双方刷新可见的第二条留言'; draft.dispatchEvent(new dom.window.Event('input',{bubbles:true}));
